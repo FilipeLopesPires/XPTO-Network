@@ -1,0 +1,1151 @@
+# AveiroGW1
+conf t
+ipv6 unicast-routing
+int f0/0
+ip nat inside
+ip address 172.30.10.1 255.255.255.0
+ipv6 address 2002:A:A:10::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip nat outside
+ip address 193.10.10.2 255.255.255.0
+ipv6 address A:A:A:10::2/64
+no shut
+int f1/1
+no switchport
+ip nat inside
+ip address 172.30.30.1 255.255.255.0
+ipv6 address 2002:A:A:30::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f1/0
+no switchport
+ip nat inside
+ip address 172.30.40.1 255.255.255.0
+ipv6 address 2002:A:A:40::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+end
+conf t
+ip route 0.0.0.0 0.0.0.0 193.10.10.1
+router ospf 1
+default-information originate always metric 5
+exit
+ipv6 router ospf 1
+router-id 1.0.1.0
+default-information originate always metric 10
+end
+conf t
+access-list 1 permit 172.30.0.0 0.0.255.255
+access-list 1 permit 172.31.0.0 0.0.255.255
+ip nat pool POOLR 193.1.1.128 193.1.1.255 netmask 255.255.255.128
+ip nat Stateful id 3
+primary 172.30.10.1
+peer 172.30.20.1
+mapping-id 10
+end
+conf t
+ip nat inside source list 1 pool POOLR mapping-id 10 overload
+end
+write
+
+conf t
+crypto isakmp policy 30
+authentication pre-share
+crypto isakmp key xpto-sitecom address 193.10.11.2
+crypto ipsec transform-set authT ah-sha-hmac
+crypto ipsec transform-set cipherT esp-des
+crypto ipsec transform-set auth_ciphT ah-sha-hmac esp-des
+crypto ipsec profile ipsec-profile-01
+set transform-set authT cipherT auth_ciphT
+end
+write
+conf t
+interface Tunnel 0
+ip nat outside
+ip unnumbered FastEthernet0/1
+tunnel source 193.10.10.2
+tunnel destination 193.10.11.2
+tunnel mode ipsec ipv4
+tunnel protection ipsec profile ipsec-profile-01
+ip route 193.2.2.0 255.255.255.0 Tunnel0
+ipv6 route ::/0 A:A:A:10::1
+end
+write
+
+
+
+
+# AveiroGW2
+conf t
+ipv6 unicast-routing
+int f0/0
+ip nat inside
+ip address 172.30.20.1 255.255.255.0
+ipv6 address 2002:A:A:20::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip nat outside
+ip address 193.10.20.2 255.255.255.0
+no shut
+int f1/0
+no switchport
+ip nat inside
+ip address 172.30.50.1 255.255.255.0
+ipv6 address 2002:A:A:50::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f1/1
+no switchport
+ip nat inside
+ip address 172.30.30.2 255.255.255.0
+ipv6 address 2002:A:A:30::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+end
+conf t
+router ospf 1
+default-information originate always metric 10
+exit
+ipv6 router ospf 1
+router-id 2.0.2.0
+default-information originate always metric 5
+end
+conf t
+access-list 1 permit 172.30.0.0 0.0.255.255
+access-list 1 permit 172.31.0.0 0.0.255.255
+ip nat pool POOLR 193.1.1.128 193.1.1.255 netmask 255.255.255.128
+ip nat Stateful id 2
+backup 172.30.20.2
+peer 172.30.10.1
+mapping-id 10
+end
+conf t
+ip nat inside source list 1 pool POOLR mapping-id 10 overload
+end
+write
+conf t
+crypto isakmp policy 30
+authentication pre-share
+crypto isakmp key xpto-sitecom address 193.10.21.2
+crypto ipsec transform-set authT ah-sha-hmac
+crypto ipsec transform-set cipherT esp-des
+crypto ipsec transform-set auth_ciphT ah-sha-hmac esp-des
+crypto ipsec profile ipsec-profile-01
+set transform-set authT cipherT auth_ciphT
+end
+write
+conf t
+interface Tunnel 0
+ip nat outside
+ip unnumbered FastEthernet0/1
+tunnel source 193.10.20.2
+tunnel destination 193.10.21.2
+tunnel mode ipsec ipv4
+tunnel protection ipsec profile ipsec-profile-01
+ip route 193.2.2.0 255.255.255.0 Tunnel0
+end
+write
+conf t
+interface Tunnel 1
+tunnel source f0/1
+ipv6 address 2002:C10A:1402::2/48
+tunnel mode ipv6ip 6to4
+no shut
+exit
+ipv6 route 2002:C10A::/32 Tunnel1
+ipv6 route ::/0 2002:C10A:1502::2
+ip route 0.0.0.0 0.0.0.0 193.10.20.1
+end
+write
+
+
+
+
+
+
+# PortoGW1
+conf t
+ipv6 unicast-routing
+int f0/0
+ip nat inside
+ip address 172.29.10.1 255.255.255.0
+ipv6 address 2002:B:B:10::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip nat outside
+ip address 193.10.11.2 255.255.255.0
+ipv6 address A:A:A:11::2/64
+no shut
+int f1/0
+no switchport
+ip nat inside
+ip address 172.29.30.1 255.255.255.0
+ipv6 address 2002:B:B:30::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+end
+conf t
+ip route 0.0.0.0 0.0.0.0 193.10.11.1
+router ospf 1
+default-information originate always metric 5
+exit
+ipv6 router ospf 1
+router-id 1.0.1.0
+default-information originate always metric 10
+end
+
+conf t
+crypto isakmp policy 30
+authentication pre-share
+crypto isakmp key xpto-sitecom address 193.10.10.2
+crypto ipsec transform-set authT ah-sha-hmac
+crypto ipsec transform-set cipherT esp-des
+crypto ipsec transform-set auth_ciphT ah-sha-hmac esp-des
+crypto ipsec profile ipsec-profile-01
+set transform-set authT cipherT auth_ciphT
+end
+write
+conf t
+interface Tunnel 0
+ip nat outside
+ip unnumbered FastEthernet0/1
+tunnel source 193.10.11.2
+tunnel destination 193.10.10.2
+tunnel mode ipsec ipv4
+tunnel protection ipsec profile ipsec-profile-01
+ip route 193.1.1.0 255.255.255.0 Tunnel0
+ipv6 route ::/0 A:A:A:11::1
+end
+write
+
+conf t
+access-list 1 permit 172.29.0.0 0.0.255.255
+ip nat pool POOLR 193.2.2.128 193.2.2.255 netmask 255.255.255.128
+ip nat Stateful id 3
+primary 172.29.10.1
+peer 172.29.20.1
+mapping-id 10
+end
+conf t
+ip nat inside source list 1 pool POOLR mapping-id 10 overload
+end
+write
+
+
+
+
+# PortoGW2
+conf t
+ipv6 unicast-routing
+int f0/0
+ip nat inside
+ip address 172.29.20.1 255.255.255.0
+ipv6 address 2002:B:B:20::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip nat outside
+ip address 193.10.21.2 255.255.255.0
+no shut
+int f1/0
+no switchport
+ip nat inside
+ip address 172.29.30.2 255.255.255.0
+ipv6 address 2002:B:B:30::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+end
+conf t
+router ospf 1
+default-information originate always metric 10
+exit
+ipv6 router ospf 1
+router-id 2.0.2.0
+default-information originate always metric 5
+end
+conf t
+crypto isakmp policy 30
+authentication pre-share
+crypto isakmp key xpto-sitecom address 193.10.20.2
+crypto ipsec transform-set authT ah-sha-hmac
+crypto ipsec transform-set cipherT esp-des
+crypto ipsec transform-set auth_ciphT ah-sha-hmac esp-des
+crypto ipsec profile ipsec-profile-01
+set transform-set authT cipherT auth_ciphT
+end
+write
+conf t
+interface Tunnel 0
+ip nat outside
+ip unnumbered FastEthernet0/1
+tunnel source 193.10.21.2
+tunnel destination 193.10.20.2
+tunnel mode ipsec ipv4
+tunnel protection ipsec profile ipsec-profile-01
+ip route 193.1.1.0 255.255.255.0 Tunnel0
+end
+write
+conf t
+interface Tunnel 1
+tunnel source f0/1
+ipv6 address 2002:C10A:1502::2/48
+tunnel mode ipv6ip 6to4
+no shut
+exit
+ipv6 route 2002:C10A::/32 Tunnel1
+ipv6 route ::/0 2002:C10A:1402::2
+ip route 0.0.0.0 0.0.0.0 193.10.21.1
+end
+write
+
+conf t
+access-list 1 permit 172.29.0.0 0.0.255.255
+ip nat pool POOLR 193.2.2.128 193.2.2.255 netmask 255.255.255.128
+ip nat Stateful id 2
+backup 172.29.20.1
+peer 172.29.10.1
+mapping-id 10
+end
+conf t
+ip nat inside source list 1 pool POOLR mapping-id 10 overload
+end
+write
+
+
+
+    
+
+# Core1
+vlan database
+vlan 501
+vlan 502
+vlan 503
+vlan 504
+vlan 505
+vlan 560
+vlan 600
+exit
+conf t
+ip routing
+ipv6 unicast-routing
+ip cef
+ipv6 router ospf 1
+router-id 1.1.1.1
+end
+conf t
+ip route 0.0.0.0 0.0.0.0 193.10.10.1 60
+int f0/0
+ip nat inside
+ip address 172.30.10.2 255.255.255.0
+ipv6 address 2002:A:A:10::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip nat inside
+ip address 172.30.50.2 255.255.255.0
+ipv6 address 2002:A:A:50::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f1/1
+switchport mode trunk
+switchport trunk allowed vlan 1,501,1002-1005
+int f1/2
+switchport mode trunk
+switchport trunk allowed vlan 1,502,600,1002-1005
+int f1/3
+switchport mode trunk
+switchport trunk allowed vlan 1,503,600,1002-1005
+int f1/4
+switchport mode trunk
+switchport trunk allowed vlan 1,504,600,1002-1005
+int f1/5
+switchport mode trunk
+switchport trunk allowed vlan 1,505,600,1002-1005
+int f1/15
+switchport
+switchport mode trunk
+switchport trunk allowed vlan 1,560,600,1002-1005
+int vlan560
+ip nat inside
+ip address 172.30.60.1 255.255.255.0
+ipv6 address 2002:A:A:60::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan501
+ip nat inside
+ip address 172.30.1.1 255.255.255.0
+ipv6 address 2002:A:A:1::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan502
+ip nat inside
+ip address 172.30.2.1 255.255.255.0
+ipv6 address 2002:A:A:2::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan503
+ip nat inside
+ip address 172.30.3.1 255.255.255.0
+ipv6 address 2002:A:A:3::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan504
+ip nat inside
+ip address 172.30.4.1 255.255.255.0
+ipv6 address 2002:A:A:4::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan505
+ip nat inside
+ip address 172.30.5.1 255.255.255.0
+ipv6 address 2002:A:A:5::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+interface Vlan600
+ip nat inside
+ip address 172.30.100.1 255.255.255.0
+ipv6 address 2002:A:A:100::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+end
+conf t
+router rip
+version 2
+no auto-summary
+redistribute ospf 1 metric 10
+network 172.30.1.0
+network 172.30.2.0
+network 172.30.3.0
+network 172.30.4.0
+network 172.30.5.0
+exit
+router ospf 1
+redistribute rip metric 10 subnets 
+end
+write
+
+
+
+
+
+# Core2
+vlan database
+vlan 511
+vlan 512
+vlan 513
+vlan 514
+vlan 515
+vlan 560
+vlan 600
+exit
+conf t
+ip routing
+ipv6 unicast-routing
+ip cef
+ipv6 router ospf 1
+router-id 2.2.2.2
+end
+conf t
+ip route 0.0.0.0 0.0.0.0 193.10.20.1
+int f0/0
+ip nat inside
+ip address 172.30.20.2 255.255.255.0
+ipv6 address 2002:A:A:20::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip nat inside
+ip address 172.30.40.2 255.255.255.0
+ipv6 address 2002:A:A:40::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f1/1
+switchport mode trunk
+switchport trunk allowed vlan 1,511,1002-1005
+int f1/2
+switchport mode trunk
+switchport trunk allowed vlan 1,512,600,1002-1005
+int f1/3
+switchport mode trunk
+switchport trunk allowed vlan 1,513,600,1002-1005
+int f1/4
+switchport mode trunk
+switchport trunk allowed vlan 1,514,600,1002-1005
+int f1/5
+switchport mode trunk
+switchport trunk allowed vlan 1,515,600,1002-1005
+int f1/15
+switchport
+switchport mode trunk
+switchport trunk allowed vlan 1,560,600,1002-1005
+int vlan560
+ip nat inside
+ip address 172.30.60.2 255.255.255.0
+ipv6 address 2002:A:A:60::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+interface Vlan511
+ip nat inside
+ip address 172.30.11.1 255.255.255.0
+ipv6 address 2002:A:A:11::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan512
+ip nat inside
+ip address 172.30.12.1 255.255.255.0
+ipv6 address 2002:A:A:12::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan513
+ip nat inside
+ip address 172.30.13.1 255.255.255.0
+ipv6 address 2002:A:A:13::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan514
+ip nat inside
+ip address 172.30.14.1 255.255.255.0
+ipv6 address 2002:A:A:14::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan515
+ip nat inside
+ip address 172.30.15.1 255.255.255.0
+ipv6 address 2002:A:A:15::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan600
+ip nat inside
+ip address 172.30.100.2 255.255.255.0
+ipv6 address 2002:A:A:100::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+end
+conf t
+router rip
+version 2
+no auto-summary
+redistribute ospf 1 metric 20
+network 172.30.11.0
+network 172.30.12.0
+network 172.30.13.0
+network 172.30.14.0
+network 172.30.15.0
+exit
+router ospf 1
+redistribute rip metric 20 subnets 
+end
+write
+
+
+
+
+# NewBuilding1
+vlan database
+vlan 503
+vlan 513
+vlan 551
+vlan 552
+vlan 553
+vlan 561
+vlan 562
+vlan 563
+vlan 564
+vlan 600
+exit
+conf t
+ip routing
+ipv6 unicast-routing
+ipv6 router ospf 1
+router-id 11.11.11.11
+end
+conf t
+int f1/0
+switchport mode trunk
+switchport trunk allowed vlan 1,503,600,1002-1005
+int f1/1
+switchport mode trunk
+switchport trunk allowed vlan 1,513,600,1002-1005
+int f1/10
+switchport mode trunk
+switchport trunk allowed vlan 1,551,561-564,600,1002-1005
+int f1/11
+switchport mode trunk
+switchport trunk allowed vlan 1,552,561-564,600,1002-1005
+int f1/12
+switchport mode trunk
+switchport trunk allowed vlan 1,553,561-564,600,1002-1005
+int f1/15
+switchport
+switchport mode trunk
+switchport trunk encapsulation dot1q
+interface Vlan600
+ip nat inside
+ip address 172.30.100.3 255.255.255.0
+ipv6 address 2002:A:A:100::3/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+interface Vlan503
+ip nat inside
+ip address 172.30.3.2 255.255.255.0
+ipv6 address 2002:A:A:3::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan513
+ip nat inside
+ip address 172.30.13.2 255.255.255.0
+ipv6 address 2002:A:A:13::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan551
+ip nat inside
+ip address 172.30.51.1 255.255.255.0
+ipv6 address 2002:A:A:51::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan552
+ip nat inside
+ip address 172.30.52.1 255.255.255.0
+ipv6 address 2002:A:A:52::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan553
+ip nat inside
+ip address 172.30.53.1 255.255.255.0
+ipv6 address 2002:A:A:53::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan561
+ip nat outside
+ip address 193.1.1.17 255.255.255.240
+ipv6 address 2002:A:A:61::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan562
+ip nat outside
+ip address 193.1.1.33 255.255.255.240
+ipv6 address 2002:A:A:62::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan563
+ip nat outside
+ip address 193.1.1.49 255.255.255.240
+ipv6 address 2002:A:A:63::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan564
+ip nat outside
+ip address 193.1.1.1 255.255.255.240
+ipv6 address 2002:A:A:64::1/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+end
+write
+conf t
+access-list 101 permit ip 193.1.1.16 0.0.0.15 any
+access-list 101 deny ip any any
+class-map match-all EF
+match access-group 101
+exit
+policy-map SETDSCP
+class EF
+set ip dscp 46
+end
+conf t
+class-map match-all PREMIUM
+match ip dscp 46
+exit
+class-map match-all BEST-EFFORT
+match ip dscp 0
+end
+conf t
+policy-map EDGE
+class PREMIUM
+priority percent 40
+class BEST-EFFORT
+police 16000 2000 2000 conform-action set-dscp-transmit 0 
+end
+write
+conf t
+int vlan503
+service-policy output EDGE
+int vlan513
+service-policy output EDGE
+int vlan561
+service-policy input SETDSCP
+end
+write
+
+
+# NewBuilding2
+vlan database
+vlan 502
+vlan 512
+vlan 551
+vlan 552
+vlan 553
+vlan 561
+vlan 562
+vlan 563
+vlan 564
+vlan 600
+vlan 570
+exit
+conf t
+ip routing
+ipv6 unicast-routing
+ipv6 router ospf 1
+router-id 12.12.12.12
+end
+conf t
+int f1/0
+switchport mode trunk
+switchport trunk allowed vlan 1,502,600,1002-1005
+int f1/1
+switchport mode trunk
+switchport trunk allowed vlan 1,512,600,1002-1005
+int f1/10
+switchport mode trunk
+switchport trunk allowed vlan 1,551,561-564,600,1002-1005
+int f1/11
+switchport mode trunk
+switchport trunk allowed vlan 1,552,561-564,600,1002-1005
+int f1/12
+switchport mode trunk
+switchport trunk allowed vlan 1,553,561-564,600,1002-1005
+int f1/15
+switchport
+switchport mode trunk
+switchport trunk encapsulation dot1q
+interface Vlan600
+ip nat inside
+ip address 172.30.100.4 255.255.255.0
+ipv6 address 2002:A:A:100::4/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+interface Vlan502
+ip nat inside
+ip address 172.30.2.2 255.255.255.0
+ipv6 address 2002:A:A:2::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan512
+ip nat inside
+ip address 172.30.12.2 255.255.255.0
+ipv6 address 2002:A:A:12::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan551
+ip nat inside
+ip address 172.30.51.2 255.255.255.0
+ipv6 address 2002:A:A:51::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan552
+ip nat inside
+ip address 172.30.52.2 255.255.255.0
+ipv6 address 2002:A:A:52::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan553
+ip nat inside
+ip address 172.30.53.2 255.255.255.0
+ipv6 address 2002:A:A:53::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan561
+ip nat outside
+ip address 193.1.1.18 255.255.255.240
+ipv6 address 2002:A:A:61::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan562
+ip nat outside
+ip address 193.1.1.34 255.255.255.240
+ipv6 address 2002:A:A:62::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan563
+ip nat outside
+ip address 193.1.1.50 255.255.255.240
+ipv6 address 2002:A:A:63::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+interface Vlan564
+ip nat outside
+ip address 193.1.1.2 255.255.255.240
+ipv6 address 2002:A:A:64::2/64
+ip ospf 1 area 100
+ipv6 ospf 1 area 100
+no shut
+no autostate
+end
+write
+conf t
+access-list 101 permit ip 193.1.1.16 0.0.0.15 any
+access-list 101 deny ip any any
+class-map match-all EF
+match access-group 101
+exit
+policy-map SETDSCP
+class EF
+set ip dscp 46
+end
+conf t
+class-map match-all PREMIUM
+match ip dscp 46
+exit
+class-map match-all BEST-EFFORT
+match ip dscp 0
+end
+conf t
+policy-map EDGE
+class PREMIUM
+priority percent 40
+class BEST-EFFORT
+police 16000 2000 2000 conform-action set-dscp-transmit 0 
+end
+write
+conf t
+int vlan502
+service-policy output EDGE
+int vlan512
+service-policy output EDGE
+int vlan561
+service-policy input SETDSCP
+end
+write
+
+# Datacenter
+vlan database
+vlan 504
+vlan 514
+vlan 571
+vlan 600
+exit
+conf t
+ip routing
+ipv6 unicast-routing
+ipv6 router ospf 1
+router-id 71.71.71.71
+end
+conf t
+int f1/0
+switchport mode trunk
+switchport trunk allowed vlan 1,504,600,1002-1005
+int f1/1
+switchport mode trunk
+switchport trunk allowed vlan 1,514,600,1002-1005
+int f1/10
+switchport mode trunk
+switchport trunk allowed vlan 1,571,600,1002-1005
+int f1/2
+switchport mode access
+switchport access vlan 571
+interface Vlan600
+ip nat inside
+ip address 172.30.100.5 255.255.255.0
+ipv6 address 2002:A:A:100::5/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+interface Vlan504
+ip nat inside
+ip address 172.30.4.2 255.255.255.0
+ipv6 address 2002:A:A:4::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan514
+ip nat inside
+ip address 172.30.14.2 255.255.255.0
+ipv6 address 2002:A:A:14::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan571
+ip nat outside
+ip address 193.1.1.65 255.255.255.224
+ipv6 address 2002:A:A:71::1/64
+ip ospf 1 area 71
+ipv6 ospf 1 area 71
+no shut
+no autostate
+end
+write
+
+# DMZ
+vlan database
+vlan 505
+vlan 515
+vlan 572
+vlan 600
+exit
+conf t
+ip routing
+ipv6 unicast-routing
+ipv6 router ospf 1
+router-id 72.72.72.72
+end
+conf t
+int f1/0
+switchport mode trunk
+switchport trunk allowed vlan 1,505,1002-1005
+int f1/1
+switchport mode trunk
+switchport trunk allowed vlan 1,515,1002-1005
+int f1/10
+switchport mode trunk
+switchport trunk allowed vlan 1,572,600,1002-1005
+interface Vlan600
+ip nat inside
+ip address 172.30.100.6 255.255.255.0
+ipv6 address 2002:A:A:100::6/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no autostate
+no shut
+interface Vlan505
+ip nat inside
+ip address 172.30.5.2 255.255.255.0
+ipv6 address 2002:A:A:5::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan515
+ip nat inside
+ip address 172.30.15.2 255.255.255.0
+ipv6 address 2002:A:A:15::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+no autostate
+interface Vlan572
+ip nat outside
+ip address 193.1.1.97 255.255.255.224
+ipv6 address 2002:A:A:72::1/64
+ip ospf 1 area 72
+ipv6 ospf 1 area 72
+no shut
+no autostate
+end
+write
+
+
+# ISP1
+conf t
+ip cef
+int f0/0
+ip address 193.10.10.1 255.255.255.0
+ipv6 address A:A:A:10::1/64
+no shut
+int f0/1
+ip address 193.10.11.1 255.255.255.0
+ipv6 address A:A:A:11::1/64
+no shut
+end
+conf t
+ip route 193.2.2.0 255.255.255.0 193.10.11.2
+ip route 193.1.1.0 255.255.255.0 193.10.10.2
+ipv6 route 2002:B:B::/48 A:A:A:11::2
+ipv6 route 2002:A:A::/48 A:A:A:10::2
+end
+write
+
+
+
+
+# ISP2
+conf t
+ip cef
+int f0/0
+ip address 193.10.20.1 255.255.255.0
+no shut
+int f0/1
+ip address 193.10.21.1 255.255.255.0
+no shut
+end
+conf t
+ip route 193.2.2.0 255.255.255.0 193.10.21.2
+ip route 193.1.1.0 255.255.255.0 193.10.20.2
+end
+write
+
+
+
+
+# PortoCore
+conf t
+ip routing
+ipv6 unicast-routing
+ip cef
+ip route 0.0.0.0 0.0.0.0 193.10.11.1
+int f0/0
+ip address 172.29.10.2 255.255.255.0
+ipv6 address 2002:B:B:10::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int f0/1
+ip address 172.29.20.2 255.255.255.0
+ipv6 address 2002:B:B:20::2/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+no shut
+int lo0
+ip address 193.2.2.1 255.255.255.128
+ipv6 address 2002:B:B:B::1/64
+ip ospf 1 area 0
+ipv6 ospf 1 area 0
+ip ospf network point-to-point 
+ipv6 ospf network point-to-point 
+no shut
+end
+write
+
+
+
+
+# Old Building
+vlan database
+vlan 1
+vlan 2
+vlan 3
+vlan 100
+vlan 200
+vlan 501
+vlan 511
+exit
+conf t
+interface range fastEthernet 1/0 - 3
+switchport mode trunk
+switchport trunk encapsulation dot1q 
+interface Vlan1
+ip address 172.31.1.1 255.255.255.0
+no shut
+no autostate
+interface Vlan2
+ip address 172.31.2.1 255.255.255.0
+no shut
+no autostate
+interface Vlan3
+ip address 172.31.3.1 255.255.255.0
+no shut
+no autostate
+interface Vlan100
+ip address 172.31.100.1 255.255.255.0
+no shut
+no autostate
+interface Vlan200
+ip address 172.31.200.1 255.255.255.0
+no shut
+no autostate
+interface Vlan501
+ip address 172.30.1.2 255.255.255.0
+no shut
+no autostate
+interface Vlan511
+ip address 172.30.11.2 255.255.255.0
+no shut
+no autostate
+end
+conf t
+ip routing
+router rip
+version 2
+no auto-summary
+network 172.31.0.0
+network 172.30.1.0
+network 172.30.11.0
+end
+write
+
+
